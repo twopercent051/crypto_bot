@@ -184,7 +184,10 @@ async def connect_support(callback: CallbackQuery):
     await callback.message.answer(text, reply_markup=home_keyboard)
     await bot.answer_callback_query(callback.id)
 
-
+async def channel(callback: CallbackQuery):
+    text = 'Подписывайтесь на наш канал !!channel_link!! и следите за новостями!'
+    await callback.message.answer(text, reply_markup=home_keyboard)
+    await bot.answer_callback_query(callback.id)
 
 def register_user(dp: Dispatcher):
     dp.register_message_handler(mute, chat_id=admin_group_id)
@@ -201,6 +204,7 @@ def register_user(dp: Dispatcher):
     dp.register_callback_query_handler(connect_admin, lambda x: x.data.split(':')[0] == 'connect', state='*')
     dp.register_callback_query_handler(operation_accept, lambda x: x.data == 'accept', state='*')
     dp.register_callback_query_handler(connect_support, lambda x: x.data == 'support', state='*')
+    dp.register_callback_query_handler(channel, lambda x: x.data == 'our_channel', state='*')
 
 
 
