@@ -2,6 +2,8 @@ import sqlite3 as sq
 import time
 import io
 
+from create_bot import auto_coins
+from tgbot.misc.requester import get_btc
 
 def sql_start():
     global base, cur
@@ -15,19 +17,28 @@ def sql_start():
         """)
     base.execute("""
         CREATE TABLE IF NOT EXISTS courses(id INTEGER PRIMARY KEY, coin_name VARCHAR(10), 
-        coin_buy_price FLOAT(15) DEFAULT 0.00, coin_sell_price FLOAT(15) DEFAULT 0.00)
+        coin_buy_price FLOAT(15) DEFAULT 0.00, coin_sell_price FLOAT(15) DEFAULT 0.00, wallet VARCHAR(100))
         """)
     base.execute("""
         CREATE TABLE IF NOT EXISTS offers(offer_id INTEGER PRIMARY KEY, user_id INTEGER, datetime INTEGER, 
         operation VARCHAR(5), coin INTEGER, quantity DECIMAL(15), price DECIMAL(15), total DECIMAL(15), 
+        is_completed VARCHAR(5), crypto_net VARCHAR(50), wallet VARCHAR(100), pay_method VARCHAR(200), 
+        pay_details VARCHAR(50))
+        """)
+    base.execute("""
+        CREATE TABLE IF NOT EXISTS supports(support_id INTEGER PRIMARY KEY, user_id INTEGER, text VARCHAR(4000), 
         is_completed VARCHAR(5))
         """)
     base.execute("""
-            CREATE TABLE IF NOT EXISTS supports(support_id INTEGER PRIMARY KEY, user_id INTEGER, text VARCHAR(4000), 
-            is_completed VARCHAR(5))
-            """)
-    base.execute('INSERT INTO courses (coin_name) VALUES ("BTC")')
-    base.execute('INSERT INTO courses (coin_name) VALUES ("USDT")')
+        INSERT INTO courses (coin_name) 
+        SELECT 'BTC' 
+        WHERE NOT EXISTS(SELECT * FROM courses WHERE coin_name = 'BTC');
+        """)
+    base.execute("""
+        INSERT INTO courses (coin_name) 
+        SELECT 'USDT' 
+        WHERE NOT EXISTS(SELECT * FROM courses WHERE coin_name = 'USDT');
+        """)
     base.commit()
 
 def get_coins():
@@ -58,14 +69,30 @@ async def user_count(timestamp):
     result = cur.execute('SELECT * FROM users WHERE reg_date > (?)', (timestamp,)).fetchall()
     return len(result)
 
-async def get_course(coin):
-    result = cur.execute('SELECT * FROM courses WHERE coin_name = (?)', (coin,)).fetchone()
+async def get_course(coin, is_money=True):
+    result_prev = cur.execute('SELECT * FROM courses WHERE coin_name = (?)', (coin,)).fetchone()
+    if coin in auto_coins and is_money:
+        market = await get_btc()
+        buy_price = market + ((market + result_prev[2]) / 100)
+        sell_price = market + ((market - result_prev[3]) / 100)
+        result = (result_prev[0], result_prev[1], buy_price, sell_price, result_prev[4])
+    else:
+        result = result_prev
     return result
 
-async def get_all_courses():
-    result = cur.execute('SELECT * FROM courses').fetchall()
+async def get_all_courses(is_money=True):
+    result_prev = cur.execute('SELECT * FROM courses').fetchall()
+    result = []
+    for res in result_prev:
+        if res[1] in auto_coins and is_money:
+            market = await get_btc()
+            buy_price = market + ((market + res[2]) / 100)
+            sell_price = market - ((market + res[3]) / 100)
+            result_coin = (res[0], res[1], buy_price, sell_price, res[4])
+            result.append(result_coin)
+        else:
+            result.append(res)
     return result
-
 
 async def change_buy_price(coin, price):
     cur.execute('UPDATE courses SET coin_buy_price = ? WHERE coin_name = ?', (price, coin))
@@ -74,6 +101,17 @@ async def change_buy_price(coin, price):
 async def change_sell_price(coin, price):
     cur.execute('UPDATE courses SET coin_sell_price = ? WHERE coin_name = ?', (price, coin))
     base.commit()
+
+
+async def update_wallet(coin, wallet):
+    cur.execute('UPDATE courses SET wallet = ? WHERE coin_name = ?', (wallet, coin))
+    base.commit()
+
+
+async def get_admin_wallet(coin):
+    result = cur.execute('SELECT wallet FROM courses WHERE coin_name = (?)', (coin,)).fetchone()
+    return result[0]
+
 
 
 async def create_offer(state):
@@ -85,10 +123,18 @@ async def create_offer(state):
         total = data.as_dict()['total']
         quantity = data.as_dict()['quantity']
         offer_date = int(time.time())
+        crypto_net = data.as_dict()['crypto_net']
+        wallet = data.as_dict()['wallet']
+        pay_method = data.as_dict()['pay_method']
+        pay_details = data.as_dict()['pay_details']
     cur.execute("""
-        INSERT INTO offers (user_id, datetime, operation, coin, quantity, price, total, is_completed)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (user_id, offer_date, operation, coin, quantity, price, total, 'False'))
+        INSERT INTO offers 
+        (user_id, datetime, operation, coin, quantity, price, total, is_completed, crypto_net, wallet, pay_method, 
+        pay_details)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (user_id, offer_date, operation, coin, quantity, price, total, 'False', crypto_net, wallet, pay_method,
+         pay_details))
     base.commit()
 
 

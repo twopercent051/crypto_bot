@@ -2,8 +2,7 @@ import asyncio
 import logging
 
 from tgbot.models.db_connector import sql_start, dumper
-sql_start()
-dumper()
+
 from tgbot.filters.admin import AdminFilter
 from tgbot.filters.user import LogFilter, BlockFilter
 from tgbot.handlers.admin import register_admin
@@ -48,9 +47,9 @@ async def main():
     register_all_middlewares(dp, config)
     register_all_filters(dp)
     register_all_handlers(dp)
-    sheduler.start()
-    sheduler_jobs()
-
+    # sheduler.start()
+    # sheduler_jobs()
+    sql_start()
 
 
     # start
