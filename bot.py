@@ -4,7 +4,7 @@ import logging
 from tgbot.models.db_connector import sql_start, dumper
 
 from tgbot.filters.admin import AdminFilter
-from tgbot.filters.user import LogFilter, BlockFilter
+from tgbot.filters.user import *
 from tgbot.handlers.admin import register_admin
 from tgbot.handlers.user import register_user
 from tgbot.handlers.echo import register_echo
@@ -27,6 +27,7 @@ def register_all_filters(dp):
     dp.filters_factory.bind(AdminFilter)
     dp.filters_factory.bind(LogFilter)
     dp.filters_factory.bind(BlockFilter)
+    dp.filters_factory.bind(WorktimeFilter)
 
 
 def register_all_handlers(dp):

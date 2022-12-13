@@ -29,7 +29,7 @@ async def user_start(message: Message):
     is_us = await is_user(user_id)
     if is_us == False:
         await create_user(user_id, user_nickname)
-        await FSMOffer.home.set()
+    await FSMOffer.home.set()
     await message.answer(''.join(text), reply_markup=keyboard)
 
 
@@ -282,25 +282,43 @@ async def channel(callback: CallbackQuery):
     await callback.message.answer(text, reply_markup=keyboard)
     await bot.answer_callback_query(callback.id)
 
+async def workout_msg(message: Message):
+    text = 'В данный момент у нас нерабочее время. Эта функция станет доступна позже'
+    keyboard = home_keyboard()
+    await message.answer(text, reply_markup=keyboard)
+
+
+async def workout_clb(callback: CallbackQuery):
+    text = 'В данный момент у нас нерабочее время. Эта функция станет доступна позже'
+    keyboard = home_keyboard()
+    await callback.message.answer(text, reply_markup=keyboard)
+    await bot.answer_callback_query(callback.id)
+
+
 def register_user(dp: Dispatcher):
     dp.register_message_handler(user_start, commands=["start"], state='*')
-    dp.register_message_handler(operation_finish, content_types='text', state=FSMOffer.finish)
     dp.register_message_handler(answer_admin, content_types='text', state=FSMConnect.connect)
+    dp.register_message_handler(workout_msg, state='*', is_workout=True)
     dp.register_message_handler(operation_net, content_types='text', state=FSMOffer.net)
     dp.register_message_handler(operation_wallet, content_types='text', state=FSMOffer.wallet)
     dp.register_message_handler(operation_pay_method, content_types='text', state=FSMOffer.pay_method)
     dp.register_message_handler(operation_pay_details, content_types='text', state=FSMOffer.pay_details)
+    dp.register_message_handler(operation_finish, content_types='text', state=FSMOffer.finish)
+
 
     dp.register_callback_query_handler(user_home, lambda x: x.data == 'home', state='*')
     dp.register_callback_query_handler(user_home, lambda x: x.data == 'cancel', state='*')
     dp.register_callback_query_handler(show_courses, lambda x: x.data == 'course_info', state='*')
+    dp.register_callback_query_handler(channel, lambda x: x.data == 'our_channel', state='*')
+    dp.register_callback_query_handler(connect_admin, lambda x: x.data.split(':')[0] == 'connect', state='*')
+    dp.register_callback_query_handler(connect_support, lambda x: x.data == 'support', state='*')
+    dp.register_callback_query_handler(workout_clb, state='*', is_workout=True)
     dp.register_callback_query_handler(buy_cripto, lambda x: x.data == 'buy_crypto', state='*')
     dp.register_callback_query_handler(sell_cripto, lambda x: x.data == 'sell_crypto', state='*')
     dp.register_callback_query_handler(operation_info, lambda x: x.data.split(':')[0] == 'coin', state='*')
-    dp.register_callback_query_handler(connect_admin, lambda x: x.data.split(':')[0] == 'connect', state='*')
     dp.register_callback_query_handler(operation_accept, lambda x: x.data == 'accept', state='*')
-    dp.register_callback_query_handler(connect_support, lambda x: x.data == 'support', state='*')
-    dp.register_callback_query_handler(channel, lambda x: x.data == 'our_channel', state='*')
+
+
 
 
 

@@ -30,6 +30,14 @@ def sql_start():
         is_completed VARCHAR(5))
         """)
     base.execute("""
+            CREATE TABLE IF NOT EXISTS worktime(id INTEGER PRIMARY KEY, is_worktime VARCHAR(10))
+            """)
+    base.execute("""
+            INSERT INTO worktime (is_worktime) 
+            SELECT 'True' 
+            WHERE NOT EXISTS(SELECT * FROM worktime WHERE id = 1);
+            """)
+    base.execute("""
         INSERT INTO courses (coin_name) 
         SELECT 'BTC' 
         WHERE NOT EXISTS(SELECT * FROM courses WHERE coin_name = 'BTC');
@@ -68,6 +76,11 @@ async def is_user(user_id):
 async def user_count(timestamp):
     result = cur.execute('SELECT * FROM users WHERE reg_date > (?)', (timestamp,)).fetchall()
     return len(result)
+
+
+async def get_users():
+    result = cur.execute('SELECT user_id FROM users').fetchall()
+    return result
 
 async def get_course(coin, is_money=True):
     result_prev = cur.execute('SELECT * FROM courses WHERE coin_name = (?)', (coin,)).fetchone()
@@ -150,3 +163,21 @@ async def get_offer_id(offer_id):
 async def change_offer_status(offer_id, offer_status):
     cur.execute('UPDATE offers SET is_completed = ? WHERE offer_id = ?', (offer_status, offer_id))
     base.commit()
+
+async def is_worktime():
+    resp = cur.execute('SELECT is_worktime FROM worktime WHERE id = 1').fetchone()
+    if resp[0] == 'True':
+        result = True
+    else:
+        result = False
+    return result
+
+async def toggle_worktime_sql():
+    status = await is_worktime()
+    if status:
+        cur.execute('UPDATE worktime SET is_worktime = "False"')
+    else:
+        cur.execute('UPDATE worktime SET is_worktime = "True"')
+    base.commit()
+
+

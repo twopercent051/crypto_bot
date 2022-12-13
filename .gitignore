@@ -61,5 +61,6 @@ venv.bak/
 .pyre/
 .idea/*
 .env
-
-
+backupdatabase.sql
+logger.log
+crypto.db

@@ -18,7 +18,8 @@ admin_group = config.misc.admin_group
 
 async def admin_start_msg(message: Message):
     text = 'Это админ-панель. Тут можно просматривать и менять курсы валют, смотреть статистику и необработанные заявки'
-    keyboard = main_admin_keyboard()
+    is_wt = await is_worktime()
+    keyboard = main_admin_keyboard(is_wt)
     # await message.delete()
     await FSMEditPrice.home.set()
     await message.answer(text, reply_markup=keyboard)
@@ -26,7 +27,8 @@ async def admin_start_msg(message: Message):
 
 async def admin_start_clb(callback: CallbackQuery):
     text = 'Это админ-панель. Тут можно просматривать и менять курсы валют, смотреть статистику и необработанные заявки'
-    keyboard = main_admin_keyboard()
+    is_wt = await is_worktime()
+    keyboard = main_admin_keyboard(is_wt)
     # await callback.message.delete()
     await FSMEditPrice.home.set()
     await bot.answer_callback_query(callback.id)
@@ -388,12 +390,46 @@ async def get_statistic(callback: CallbackQuery):
         await bot.answer_callback_query(callback.id)
 
 
+async def toggle_worktime(callback: CallbackQuery):
+    await toggle_worktime_sql()
+    is_wkt = await is_worktime()
+    keyboard = main_admin_keyboard(is_wkt)
+    await callback.message.edit_reply_markup(keyboard)
+    await bot.answer_callback_query(callback.id)
+
+
+
 async def dump_db(callback: CallbackQuery):
     dumper()
     time.sleep(3)
     doc_path = f'{os.getcwd()}/backupdatabase.sql'
     await bot.send_document(chat_id=admin_group, document=open(doc_path, 'rb'))
     await bot.answer_callback_query(callback.id)
+
+
+async def mailing(callback: CallbackQuery):
+    text = '⚠️ ВНИМАНИЕ! Сообщение будет отправлено всем зарегистрированным пользователям!'
+    keyboard = home_keyboard()
+    await callback.message.answer(text, reply_markup=keyboard)
+    await bot.answer_callback_query(callback.id)
+
+
+async def send_mails(message: Message):
+    user_text = message.text
+    users = await get_users()
+    count_ok = 0
+    count_fail = 0
+    for user in users:
+        user_id = user[0]
+        try:
+            await bot.send_message(user_id, user_text)
+            count_ok += 1
+        except:
+            count_fail += 1
+    admin_text = f'Успешно разослали {hcode(count_ok)} пользователям. Неуспешно {hcode(count_fail)}'
+    keyboard = home_keyboard()
+    await message.answer(admin_text, reply_markup=keyboard)
+
 
 
 
@@ -407,6 +443,7 @@ def register_admin(dp: Dispatcher):
     dp.register_message_handler(answer_user, state=FSMConnect.connect, content_types='text', chat_id=admin_group)
     dp.register_message_handler(admin_update_wallet, state=FSMEditPrice.wallet, content_types='text',
                                 chat_id=admin_group)
+    dp.register_message_handler(send_mails, state='*', content_types='text', chat_id=admin_group)
 
 
 
@@ -439,5 +476,8 @@ def register_admin(dp: Dispatcher):
                                        chat_id=admin_group)
     dp.register_callback_query_handler(admin_edit_wallet, lambda x: x.data.split(':')[0] == 'coin',
                                        state=FSMEditPrice.wallet, chat_id=admin_group)
+    dp.register_callback_query_handler(toggle_worktime, lambda x: x.data == 'toggle_worktime', state='*',
+                                       chat_id=admin_group)
+    dp.register_callback_query_handler(mailing, lambda x: x.data == 'mailing', state='*', chat_id=admin_group)
 
 

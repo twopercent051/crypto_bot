@@ -19,14 +19,21 @@ def main_user_keyboard():
     return main_user_keyboard
 
 
-def main_admin_keyboard():
+def main_admin_keyboard(is_worktime):
+    if is_worktime:
+        wt_text = '🟩 Завершить рабочий день 🟩'
+    else:
+        wt_text = '🟥 Начать рабочий день 🟥'
     edit_course_button = InlineKeyboardButton(text='Редактировать курс', callback_data='edit_course')
     edit_wallet_button = InlineKeyboardButton(text='Редактировать кошелёк', callback_data='edit_wallet')
     get_stat_button = InlineKeyboardButton(text='Статистика', callback_data='get_stat')
     get_offers_button = InlineKeyboardButton(text='Заявки', callback_data='get_offers')
+    mailing_button = InlineKeyboardButton(text='Рассылка', callback_data='mailing')
+    worktime_button = InlineKeyboardButton(text=wt_text, callback_data='toggle_worktime')
     dump_button = InlineKeyboardButton(text='Дамп базы', callback_data='dump_db')
-    main_admin_keyboard = InlineKeyboardMarkup(row_width=1).add(edit_course_button, edit_wallet_button,
-                                                                get_stat_button, get_offers_button, dump_button)
+    main_admin_keyboard = InlineKeyboardMarkup(row_width=2).add(edit_course_button, edit_wallet_button,
+                                                                get_stat_button, get_offers_button, mailing_button,
+                                                                worktime_button, dump_button)
     return main_admin_keyboard
 
 

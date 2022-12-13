@@ -28,3 +28,16 @@ class BlockFilter(BoundFilter):
         blocked_users = await db_connector.filter_block_filter()
         print(blocked_users)
         return (obj.from_user.id in blocked_users) == self.is_blocked
+
+
+class WorktimeFilter(BoundFilter):
+    key = 'is_workout'
+
+    def __init__(self, is_workout: typing.Optional[bool] = None):
+        self.is_workout = is_workout
+
+    async def check(self, obj):
+        if self.is_workout is None:
+            return False
+        is_worktime = await db_connector.is_worktime()
+        return (is_worktime == False)
