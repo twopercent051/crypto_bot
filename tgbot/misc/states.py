@@ -19,6 +19,7 @@ class FSMOffer(StatesGroup):
 
 class FSMConnect(StatesGroup):
     connect = State()
+    mailing = State()
 
 
 

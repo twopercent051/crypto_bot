@@ -6,7 +6,8 @@ from aiogram.utils.markdown import hcode
 async def get_chat_id(message: types.Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
-    print(user_id, chat_id)
+    await message.answer(f'user_id: {user_id} || chat_id: {chat_id}')
+
 
 
 async def bot_echo(message: types.Message):

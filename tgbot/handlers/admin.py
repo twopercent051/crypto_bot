@@ -10,6 +10,7 @@ from tgbot.config import load_config
 from tgbot.keyboards.inline import *
 from tgbot.models.db_connector import *
 from tgbot.misc.states import *
+from tgbot.models.redis_connector import *
 from create_bot import bot, auto_coins
 
 config = load_config(".env")
@@ -53,7 +54,7 @@ async def admin_edit_buy_price(callback: CallbackQuery, state: FSMContext):
     price_cor = await get_course(coin, is_money=False)
     price = price_cor[2]
     text = [
-        f'Сейчас цена покупки <b>{coin}</b> составляет {price} ₽. Введите нову ценую или нажмите ПРОПУСТИТЬ',
+        f'Сейчас цена покупки <b>{coin}</b> составляет {price} ₽. Введите новую цену или нажмите ПРОПУСТИТЬ',
         'Вводить можно как через запятую, так и через точку',
         f'⚠️ВНИМАНИЕ!! Для валют: <b>{auto_coins}</b> указан процент отклонения от официальной цены!'
     ]
@@ -189,6 +190,7 @@ async def answer_user(message: Message, state: FSMContext):
     async with state.proxy() as data:
         user_id = data.as_dict()['user_id']
     user_kb = connect_user_kb(admin_group)
+    await FSMEditPrice.home.set()
     await bot.send_message(chat_id=user_id, text='\n'.join(text_user), reply_markup=user_kb)
     await message.answer(text_admin, reply_markup=keyboard)
 
@@ -391,8 +393,8 @@ async def get_statistic(callback: CallbackQuery):
 
 
 async def toggle_worktime(callback: CallbackQuery):
-    await toggle_worktime_sql()
-    is_wkt = await is_worktime()
+    await toggle_working()
+    is_wkt = await is_working()
     keyboard = main_admin_keyboard(is_wkt)
     await callback.message.edit_reply_markup(keyboard)
     await bot.answer_callback_query(callback.id)
@@ -410,6 +412,7 @@ async def dump_db(callback: CallbackQuery):
 async def mailing(callback: CallbackQuery):
     text = '⚠️ ВНИМАНИЕ! Сообщение будет отправлено всем зарегистрированным пользователям!'
     keyboard = home_keyboard()
+    await FSMConnect.mailing.set()
     await callback.message.answer(text, reply_markup=keyboard)
     await bot.answer_callback_query(callback.id)
 
@@ -443,7 +446,7 @@ def register_admin(dp: Dispatcher):
     dp.register_message_handler(answer_user, state=FSMConnect.connect, content_types='text', chat_id=admin_group)
     dp.register_message_handler(admin_update_wallet, state=FSMEditPrice.wallet, content_types='text',
                                 chat_id=admin_group)
-    dp.register_message_handler(send_mails, state='*', content_types='text', chat_id=admin_group)
+    dp.register_message_handler(send_mails, state=FSMConnect.mailing, content_types='text', chat_id=admin_group)
 
 
 

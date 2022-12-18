@@ -17,11 +17,12 @@ admin_group_id = config.misc.admin_group
 
 async def user_start(message: Message):
     text = [
-        'Здравствуйте! Это приветственное сообщение, его нужно отредактировать. Тут можно писать <b>жирным</b>,',
-        '<i>курсивом</i>, <u>подчёркнутым</u>, <b><i>а также любыми</i></b> <u><i>комбинациями</i></u>. Ещё можно',
-        'добавить эмодзи 🇬🇧.',
-        '\n',
-        'А теперь нажмите на интересующую кнопку!'
+        'Здравствуйте! Это официальный бот Miner World по обмену криптовалют.'
+        'Здесь вы можете купить или продать USDT, BTC.',
+        'На обмен принимаются заявки до 1000$.',
+        'Способы оплаты: СБП, Qiwi, Сбербанк, Росбанк.',
+        'В случае возникновения проблем нажмите кнопку «поддержка».'
+
     ]
     keyboard = main_user_keyboard()
     user_id = message.from_user.id
@@ -30,16 +31,23 @@ async def user_start(message: Message):
     if is_us == False:
         await create_user(user_id, user_nickname)
     await FSMOffer.home.set()
-    await message.answer(''.join(text), reply_markup=keyboard)
+    await message.answer('\n'.join(text), reply_markup=keyboard)
 
 
 async def user_home(callback: CallbackQuery):
-    text = 'ГЛАВНОЕ МЕНЮ ПОЛЬЗОВАТЕЛЯ'
+    text = [
+        'Здравствуйте! Это официальный бот Miner World по обмену криптовалют.'
+        'Здесь вы можете купить или продать USDT, BTC.',
+        'На обмен принимаются заявки до 1000$.',
+        'Способы оплаты: СБП, Qiwi, Сбербанк, Росбанк.',
+        'В случае возникновения проблем нажмите кнопку «поддержка».'
+
+    ]
     keyboard = main_user_keyboard()
     await callback.message.delete()
     await bot.answer_callback_query(callback.id)
     await FSMOffer.home.set()
-    await callback.message.answer(text, reply_markup=keyboard)
+    await callback.message.answer('\n'.join(text), reply_markup=keyboard)
 
 
 async def show_courses(callback: CallbackQuery):
@@ -47,7 +55,7 @@ async def show_courses(callback: CallbackQuery):
     keyboard = home_keyboard()
     courses = await get_all_courses()
     for cours in courses:
-        row = f'<b>{cours[1]}</b>. Цена покупки: {float(cours[2])} ₽, Цена продажи: {float(cours[3])} ₽'
+        row = f'<b>{cours[1]}</b>. Цена покупки: {float(cours[3])} ₽, Цена продажи: {float(cours[2])} ₽'
         text.append(row)
     await callback.message.delete()
     await bot.answer_callback_query(callback.id)
@@ -80,13 +88,14 @@ async def operation_info(callback: CallbackQuery, state: FSMContext):
     coin = callback.data.upper().split(':')[1]
     op_id, op_text = None, None
     if operation == 'buy':
-        op_id = 2
+        op_id = 3
         op_text = 'продаём'
     elif operation == 'sell':
-        op_id = 3
+        op_id = 2
         op_text = 'покупаем'
     price_cor = await get_course(coin)
     price = price_cor[op_id]
+    print(price)
     async with state.proxy() as data:
         data['price'] = price
         data['coin'] = coin
@@ -108,7 +117,7 @@ async def operation_net(message: Message, state: FSMContext):
         async with state.proxy() as data:
             operation = data.as_dict()['operation']
             price = data.as_dict()['price']
-        total = float(quantity) * float(price)
+        total = round(quantity * float(price), 2)
         text = 'Укажите крипто-сеть'
         keyboard = home_keyboard()
         async with state.proxy() as data:
@@ -116,7 +125,8 @@ async def operation_net(message: Message, state: FSMContext):
             data['quantity'] = quantity
             data['total'] = total
         if operation == 'buy':
-            await FSMOffer.wallet.set()
+            # await FSMOffer.wallet.set()
+            await FSMOffer.pay_method.set()
         if operation == 'sell':
             await FSMOffer.pay_details.set()
         await message.answer(text, reply_markup=keyboard)
@@ -139,14 +149,27 @@ async def operation_wallet(message: Message, state: FSMContext):
 
 
 async def operation_pay_method(message: Message, state: FSMContext):
-    wallet = message.text
-    text = 'Укажите cпособ оплаты, номер телефона или номер карты (СБП, Сбер, Росбанк)'
+    # wallet = message.text
+    crypto_net = message.text
+    text = [
+        'Укажите способ оплаты:',
+        'Название банка',
+        'СБП (номер телефона) или номер карты'
+    ]
     keyboard = home_keyboard()
+    # async with state.proxy() as data:
+    #     data['wallet'] = wallet
+    #     data['pay_details'] = ''
+    # await FSMOffer.finish.set()
+    # await message.answer('\n'.join(text), reply_markup=keyboard)
     async with state.proxy() as data:
-        data['wallet'] = wallet
-        data['pay_details'] = ''
+        data['crypto_net'] = crypto_net
+        data['wallet'] = ''
     await FSMOffer.finish.set()
-    await message.answer(text, reply_markup=keyboard)
+    # await message.answer(text, reply_markup=keyboard)
+    await message.answer('\n'.join(text), reply_markup=keyboard)
+
+
 
 
 async def operation_pay_details(message: Message, state: FSMContext):
@@ -277,7 +300,7 @@ async def connect_support(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
 
 async def channel(callback: CallbackQuery):
-    text = 'Подписывайтесь на наш канал !!channel_link!! и следите за новостями!'
+    text = 'Подписывайтесь на наш канал @minerworldex и следите за новостями!'
     keyboard = home_keyboard()
     await callback.message.answer(text, reply_markup=keyboard)
     await bot.answer_callback_query(callback.id)

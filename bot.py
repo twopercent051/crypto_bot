@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from tgbot.models.db_connector import sql_start, dumper
+from tgbot.models.redis_connector import redis_start
 
 from tgbot.filters.admin import AdminFilter
 from tgbot.filters.user import *
@@ -25,8 +26,8 @@ def register_all_middlewares(dp, config):
 
 def register_all_filters(dp):
     dp.filters_factory.bind(AdminFilter)
-    dp.filters_factory.bind(LogFilter)
-    dp.filters_factory.bind(BlockFilter)
+    # dp.filters_factory.bind(LogFilter)
+    # dp.filters_factory.bind(BlockFilter)
     dp.filters_factory.bind(WorktimeFilter)
 
 
@@ -51,6 +52,7 @@ async def main():
     # sheduler.start()
     # sheduler_jobs()
     sql_start()
+    redis_start()
 
 
     # start

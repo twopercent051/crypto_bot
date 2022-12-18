@@ -86,7 +86,7 @@ async def get_course(coin, is_money=True):
     result_prev = cur.execute('SELECT * FROM courses WHERE coin_name = (?)', (coin,)).fetchone()
     if coin in auto_coins and is_money:
         market = await get_btc()
-        buy_price = market + ((market + result_prev[2]) / 100)
+        buy_price = market - ((market + result_prev[2]) / 100)
         sell_price = market + ((market - result_prev[3]) / 100)
         result = (result_prev[0], result_prev[1], buy_price, sell_price, result_prev[4])
     else:
@@ -99,8 +99,8 @@ async def get_all_courses(is_money=True):
     for res in result_prev:
         if res[1] in auto_coins and is_money:
             market = await get_btc()
-            buy_price = market + ((market + res[2]) / 100)
-            sell_price = market - ((market + res[3]) / 100)
+            buy_price = market - ((market + res[2]) / 100)
+            sell_price = market + ((market + res[3]) / 100)
             result_coin = (res[0], res[1], buy_price, sell_price, res[4])
             result.append(result_coin)
         else:
