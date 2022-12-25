@@ -33,7 +33,7 @@ def main_admin_keyboard(is_worktime):
     dump_button = InlineKeyboardButton(text='Дамп базы', callback_data='dump_db')
     main_admin_keyboard = InlineKeyboardMarkup(row_width=2).add(edit_course_button, edit_wallet_button,
                                                                 get_stat_button, get_offers_button, mailing_button,
-                                                                worktime_button, dump_button)
+                                                                worktime_button)
     return main_admin_keyboard
 
 
@@ -73,7 +73,7 @@ def connect_user_kb(user_id):
 
 def offers_admin_kb(offer_list, is_completed):
     home_button = InlineKeyboardButton(text='🏠 ДОМОЙ', callback_data='home')
-    offer_keyboard = None
+    offer_keyboard = InlineKeyboardMarkup(row_width=1)
     if is_completed == 'True':
         emodji = '✅ '
     else:
@@ -82,7 +82,7 @@ def offers_admin_kb(offer_list, is_completed):
         offer_id = offer[0]
         offer_button = InlineKeyboardButton(text=f'{emodji} --ID {offer_id}-- {emodji}',
                                             callback_data=f'offer:{offer_id}')
-        offer_keyboard = InlineKeyboardMarkup(row_width=1).add(offer_button)
+        offer_keyboard.add(offer_button)
     offer_keyboard.add(home_button)
     return offer_keyboard
 

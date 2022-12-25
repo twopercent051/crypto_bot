@@ -7,6 +7,7 @@ r = redis.Redis(host=config.rds.host, port=config.rds.port, db=config.rds.db)
 
 def redis_start():
     r.set('is_working', 'True')
+    print('Redis connected OK')
 
 async def toggle_working():
     response = r.get('is_working').decode('utf-8')

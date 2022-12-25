@@ -6,7 +6,7 @@ from aiogram.utils.markdown import hcode
 from tgbot.misc.states import *
 from tgbot.keyboards.inline import *
 from tgbot.config import load_config
-from tgbot.models.db_connector import *
+from tgbot.models.mysql_connector import *
 from create_bot import bot
 
 
@@ -18,7 +18,7 @@ admin_group_id = config.misc.admin_group
 async def user_start(message: Message):
     text = [
         'Здравствуйте! Это официальный бот Miner World по обмену криптовалют.'
-        'Здесь вы можете купить или продать USDT, BTC.',
+        'В этом боте вы можете купить или продать USDT, BTC.',
         'На обмен принимаются заявки до 1000$.',
         'Способы оплаты: СБП, Qiwi, Сбербанк, Росбанк.',
         'В случае возникновения проблем нажмите кнопку «поддержка».'
@@ -44,7 +44,7 @@ async def user_home(callback: CallbackQuery):
 
     ]
     keyboard = main_user_keyboard()
-    await callback.message.delete()
+    # await callback.message.delete()
     await bot.answer_callback_query(callback.id)
     await FSMOffer.home.set()
     await callback.message.answer('\n'.join(text), reply_markup=keyboard)
@@ -105,8 +105,9 @@ async def operation_info(callback: CallbackQuery, state: FSMContext):
         'Вводить можно как через запятую, так и через точку.',
         'Мы меняем на сумму, не большую эквивалента $1000'
     ]
-    await callback.message.delete()
-    await FSMOffer.net.set()
+    # await callback.message.delete()
+    await FSMOffer.finish.set()
+    # await FSMOffer.net.set()
     await bot.answer_callback_query(callback.id)
     await callback.message.answer(' '.join(text))
 
@@ -186,11 +187,12 @@ async def operation_pay_details(message: Message, state: FSMContext):
 
 async def operation_finish(message: Message, state: FSMContext):
     try:
+        quantity = float(message.text.replace(',', '.'))
         async with state.proxy() as data:
             operation = data.as_dict()['operation']
             coin = data.as_dict()['coin']
-            quantity = data.as_dict()['quantity']
-            total = data.as_dict()['total']
+            price = data.as_dict()['price']
+        total = round(quantity * float(price), 2)
         op_text = ''
         pay_method = ''
         pay_details = ''
@@ -205,10 +207,12 @@ async def operation_finish(message: Message, state: FSMContext):
             'Подтвердите заявку, и в ближайшее время с Вами свяжется наш сотрудник'
         ]
         keyboard = accept_keyboard()
+        user_nickname = f'@{message.from_user.username}' if message.from_user.username is not None else 'Отсутствует'
         async with state.proxy() as data:
             data['user_id'] = message.from_user.id
-            data['pay_method'] = pay_method
-            data['pay_details'] = pay_details
+            data['user_username'] = user_nickname
+            # data['pay_method'] = pay_method
+            # data['pay_details'] = pay_details
         # del_masg = message.message_id - 1
         # await bot.delete_message(chat_id=message.chat.id, message_id=del_masg)
         # await message.delete()
@@ -227,19 +231,21 @@ async def operation_accept(callback: CallbackQuery, state: FSMContext):
         coin = data.as_dict()['coin']
         price = data.as_dict()['price']
         user_id = data.as_dict()['user_id']
+        user_username = data.as_dict()['user_username']
         total = data.as_dict()['total']
         quantity = data.as_dict()['quantity']
-        crypto_net = data.as_dict()['crypto_net']
-        wallet = data.as_dict()['wallet']
-        pay_method = data.as_dict()['pay_method']
-        pay_details = data.as_dict()['pay_details']
-    admin_wallet = await get_admin_wallet(coin)
+        # crypto_net = data.as_dict()['crypto_net']
+        # wallet = data.as_dict()['wallet']
+        # pay_method = data.as_dict()['pay_method']
+        # pay_details = data.as_dict()['pay_details']
+
     if operation == 'buy':
         op_text = 'покупку'
         wallet_text = ''
     else:
         op_text = 'продажу'
-        wallet_text = f'Наш кошелёк для внесения криптовалюты: {hcode(admin_wallet)}'
+        admin_wallet = await get_admin_wallet(coin)
+        wallet_text = f'Наш кошелёк для внесения криптовалюты: {hcode(admin_wallet[0])}'
     ex_text = []
 
     user_text = [
@@ -253,15 +259,16 @@ async def operation_accept(callback: CallbackQuery, state: FSMContext):
         f'<b>Цена:</b> {price} ₽',
         f'<b>Количество:</b> {quantity}',
         f'<b>Сумма:</b> {total} ₽',
-        f'<b>Крипто-сеть:</b> {hcode(crypto_net)}'
+        # f'<b>Крипто-сеть:</b> {hcode(crypto_net)}',
+        f'<b>Юзернейм клиента:</b> {user_username}'
     ]
-    if operation == 'buy':
-        ex_text = [
-            f'<b>Кошелёк:</b> {hcode(wallet)}',
-            f'<b>Способ оплаты:</b> {hcode(pay_method)}',
-        ]
-    if operation == 'sell':
-        ex_text = [f'<b>Реквизиты для оплаты:</b> {hcode(pay_details)}']
+    # if operation == 'buy':
+    #     ex_text = [
+    #         f'<b>Кошелёк:</b> {hcode(wallet)}',
+    #         f'<b>Способ оплаты:</b> {hcode(pay_method)}',
+    #     ]
+    # if operation == 'sell':
+    #     ex_text = [f'<b>Реквизиты для оплаты:</b> {hcode(pay_details)}']
     admin_text.extend(ex_text)
     admin_keyboard = connect_user_kb(user_id)
     user_keyboard = home_keyboard()

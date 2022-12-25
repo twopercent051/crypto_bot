@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from tgbot.models.db_connector import sql_start, dumper
+# from tgbot.models.db_connector import sql_start, dumper
+from tgbot.models.mysql_connector import sql_start
 from tgbot.models.redis_connector import redis_start
 
 from tgbot.filters.admin import AdminFilter

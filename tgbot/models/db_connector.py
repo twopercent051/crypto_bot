@@ -10,7 +10,7 @@ def sql_start():
     base = sq.connect('crypto.db')
     cur = base.cursor()
     if base:
-        print('Datebase connected OK')
+        print('SQLite connected OK')
     base.execute("""
         CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, user_id INTEGER, nickname VARCHAR(50), 
         name VARCHAR(50), phone VARCHAR(20), reg_date INTEGER)
@@ -38,9 +38,7 @@ def sql_start():
             WHERE NOT EXISTS(SELECT * FROM worktime WHERE id = 1);
             """)
     base.execute("""
-        INSERT INTO courses (coin_name) 
-        SELECT 'BTC' 
-        WHERE NOT EXISTS(SELECT * FROM courses WHERE coin_name = 'BTC');
+        INSERT INTO courses (coin_name) VALUES 'BTC';
         """)
     base.execute("""
         INSERT INTO courses (coin_name) 

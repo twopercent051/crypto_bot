@@ -8,7 +8,7 @@ from datetime import datetime
 
 from tgbot.config import load_config
 from tgbot.keyboards.inline import *
-from tgbot.models.db_connector import *
+from tgbot.models.mysql_connector import *
 from tgbot.misc.states import *
 from tgbot.models.redis_connector import *
 from create_bot import bot, auto_coins
@@ -19,7 +19,7 @@ admin_group = config.misc.admin_group
 
 async def admin_start_msg(message: Message):
     text = 'Это админ-панель. Тут можно просматривать и менять курсы валют, смотреть статистику и необработанные заявки'
-    is_wt = await is_worktime()
+    is_wt = await is_working()
     keyboard = main_admin_keyboard(is_wt)
     # await message.delete()
     await FSMEditPrice.home.set()
@@ -28,7 +28,7 @@ async def admin_start_msg(message: Message):
 
 async def admin_start_clb(callback: CallbackQuery):
     text = 'Это админ-панель. Тут можно просматривать и менять курсы валют, смотреть статистику и необработанные заявки'
-    is_wt = await is_worktime()
+    is_wt = await is_working()
     keyboard = main_admin_keyboard(is_wt)
     # await callback.message.delete()
     await FSMEditPrice.home.set()
@@ -251,16 +251,17 @@ async def show_offer(callback: CallbackQuery):
         f'<b>Количество:</b> {offer[5]}',
         f'<b>Сумма:</b> {offer[7]} ₽',
         f'<b>Дата:</b> {date}',
-        f'<b>Крипто-сеть:</b> {hcode(offer[9])}'
+        # f'<b>Крипто-сеть:</b> {hcode(offer[9])}',
+        # f'<b>Юзернейм клиента:</b> {offer[14]}'
     ]
-    if offer[3] == 'buy':
-        ex_text = [
-            f'<b>Кошелёк:</b> {hcode(offer[10])}',
-            f'<b>Способ оплаты:</b> {hcode(offer[11])}',
-        ]
-    if offer[3] == 'sell':
-        ex_text = [f'<b>Реквизиты для оплаты:</b> {hcode(offer[12])}']
-    offer_text.extend(ex_text)
+    # if offer[3] == 'buy':
+    #     ex_text = [
+    #         f'<b>Кошелёк:</b> {hcode(offer[10])}',
+    #         f'<b>Способ оплаты:</b> {hcode(offer[11])}',
+    #     ]
+    # if offer[3] == 'sell':
+    #     ex_text = [f'<b>Реквизиты для оплаты:</b> {hcode(offer[12])}']
+    # offer_text.extend(ex_text)
     await bot.answer_callback_query(callback.id)
     if offer[8] == 'False':
         keyboard = uncompl_offer_kb(user_id=offer[1], offer_id=offer_id)
@@ -290,7 +291,8 @@ async def close_offer(callback: CallbackQuery):
         f'<b>Количество:</b> {offer[5]}',
         f'<b>Сумма:</b> {offer[7]} ₽',
         f'<b>Дата:</b> {date}',
-        f'<b>Крипто-сеть:</b> {hcode(offer[9])}'
+        f'<b>Крипто-сеть:</b> {hcode(offer[9])}',
+        f'<b>Юзернейм клиента:</b> {offer[13]}'
     ]
     if offer[3] == 'buy':
         ex_text = [
@@ -325,7 +327,8 @@ async def open_offer(callback: CallbackQuery):
         f'<b>Количество:</b> {offer[5]}',
         f'<b>Сумма:</b> {offer[7]} ₽',
         f'<b>Дата:</b> {date}',
-        f'<b>Крипто-сеть:</b> {hcode(offer[9])}'
+        f'<b>Крипто-сеть:</b> {hcode(offer[9])}',
+        f'<b>Юзернейм клиента:</b> {offer[13]}'
     ]
     if offer[3] == 'buy':
         ex_text = [
@@ -402,7 +405,7 @@ async def toggle_worktime(callback: CallbackQuery):
 
 
 async def dump_db(callback: CallbackQuery):
-    dumper()
+    # dumper()
     time.sleep(3)
     doc_path = f'{os.getcwd()}/backupdatabase.sql'
     await bot.send_document(chat_id=admin_group, document=open(doc_path, 'rb'))
@@ -474,7 +477,7 @@ def register_admin(dp: Dispatcher):
                                        chat_id=admin_group)
     dp.register_callback_query_handler(get_statistic, lambda x: x.data.split(':')[0] == 'get_stat', state='*',
                                        chat_id=admin_group)
-    dp.register_callback_query_handler(dump_db, lambda x: x.data == 'dump_db', state='*', chat_id=admin_group)
+    # dp.register_callback_query_handler(dump_db, lambda x: x.data == 'dump_db', state='*', chat_id=admin_group)
     dp.register_callback_query_handler(admin_get_wallet, lambda x: x.data == 'edit_wallet', state='*',
                                        chat_id=admin_group)
     dp.register_callback_query_handler(admin_edit_wallet, lambda x: x.data.split(':')[0] == 'coin',
